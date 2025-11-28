@@ -514,5 +514,19 @@ if (!token) {
     process.exit(1);
 }
 
-client.login(token);
+client.login(token).catch((error) => {
+    if (error.message.includes('disallowed intents') || error.message.includes('Used disallowed intents')) {
+        console.error('\n❌ ERROR: Disallowed Intents Detected!');
+        console.error('\n📋 SOLUTION: You need to enable "Message Content Intent" in Discord Developer Portal:');
+        console.error('   1. Go to https://discord.com/developers/applications');
+        console.error('   2. Select your bot application');
+        console.error('   3. Go to the "Bot" section');
+        console.error('   4. Scroll down to "Privileged Gateway Intents"');
+        console.error('   5. Enable "MESSAGE CONTENT INTENT"');
+        console.error('   6. Save changes and restart the bot\n');
+    } else {
+        console.error('❌ Error logging in:', error.message);
+    }
+    process.exit(1);
+});
 

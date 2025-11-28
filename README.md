@@ -48,7 +48,11 @@ A Discord.js bot that persistently tracks and posts Battlefield 6 player statist
 2. Create a new application or select an existing one
 3. Navigate to the "Bot" section
 4. Click "Reset Token" and copy the token
-5. Enable "Message Content Intent" under Privileged Gateway Intents
+5. **⚠️ IMPORTANT:** Scroll down to "Privileged Gateway Intents" section
+6. **Enable "MESSAGE CONTENT INTENT"** - This is REQUIRED for the bot to read commands!
+7. Save changes
+
+**Note:** If you see "Used disallowed intents" error, you haven't enabled the Message Content Intent. The bot needs this to read and respond to commands like `!search` and `!track`.
 
 ### Getting Your Channel ID
 
@@ -148,15 +152,25 @@ pm2 startup
 
 ## Troubleshooting
 
+**"Used disallowed intents" Error:**
+- This error means the Message Content Intent is not enabled
+- Go to [Discord Developer Portal](https://discord.com/developers/applications) → Your Bot → Bot section
+- Scroll to "Privileged Gateway Intents"
+- **Enable "MESSAGE CONTENT INTENT"**
+- Save changes and restart the bot
+- The bot requires this intent to read commands like `!search` and `!track`
+
 **Bot doesn't respond:**
 - Check that the bot token is correct
 - Ensure "Message Content Intent" is enabled in Discord Developer Portal
 - Verify the bot has permission to send messages in the channel
+- Make sure the bot is online (check the status in Discord)
 
 **Stats not updating:**
 - Verify player names and platforms are correct
 - Check API is accessible (visit the API URL in browser)
 - Review console logs for errors
+- Use `!list` to verify players are being tracked
 
 **Rate limiting:**
 - Increase the `UPDATE_INTERVAL` value
