@@ -9,7 +9,9 @@ A Discord.js bot that persistently tracks and posts Battlefield 6 player statist
 - ⏰ Configurable update intervals (default: 1 hour)
 - 🔄 Tracks multiple players across different platforms
 - 💾 Only posts when stats have changed (prevents spam)
-- 🎯 Manual update command available
+- 🔍 Search for players by name and get their IDs
+- ➕ Add/remove players dynamically via Discord commands
+- 💾 Persistent storage of tracked players (survives bot restarts)
 
 ## Prerequisites
 
@@ -29,14 +31,14 @@ A Discord.js bot that persistently tracks and posts Battlefield 6 player statist
 3. **Set up environment variables:**
    - Copy `.env.example` to `.env`
    - Fill in your Discord bot token and channel ID
-   - Configure players to track
 
    ```env
    DISCORD_BOT_TOKEN=your_bot_token_here
    CHANNEL_ID=your_channel_id_here
-   PLAYERS=[{"name":"PlayerName","platform":"pc"}]
    UPDATE_INTERVAL=3600000
    ```
+
+   **Note:** Players are now added via Discord commands (`!search` and `!track`), not in the `.env` file!
 
 ## Configuration
 
@@ -54,17 +56,9 @@ A Discord.js bot that persistently tracks and posts Battlefield 6 player statist
 2. Right-click on the channel where you want stats posted
 3. Click "Copy ID"
 
-### Configuring Players
+### Adding Players to Track
 
-The `PLAYERS` environment variable should be a JSON array with player objects:
-
-```json
-[
-  {"name": "PlayerName1", "platform": "pc"},
-  {"name": "PlayerName2", "platform": "xbox"},
-  {"name": "PlayerName3", "platform": "psn"}
-]
-```
+Players are added via Discord commands (see **Usage** section below). The bot will automatically save tracked players to `trackedPlayers.json`.
 
 **Platform options:**
 - `pc` - PC/Steam/Origin
@@ -94,8 +88,20 @@ Set `UPDATE_INTERVAL` in milliseconds:
    - Only post when stats have changed
 
 3. **Available Commands:**
-   - `!bf6update` - Manually trigger a stats update
-   - `!bf6help` - Show help message
+   - `!search <playername>` - Search for players by name and get their IDs
+   - `!track <ID>` - Add a player to tracking using their player ID
+   - `!list` - List all currently tracked players
+   - `!untrack <ID>` - Remove a player from tracking
+   - `!update` or `!bf6update` - Manually trigger a stats update
+   - `!help` or `!bf6help` - Show help message
+
+**Example Usage:**
+```
+!search PlayerName123
+!track 1234567890
+!list
+!untrack 1234567890
+```
 
 ## API Reference
 
