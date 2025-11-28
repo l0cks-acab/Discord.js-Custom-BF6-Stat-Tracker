@@ -92,6 +92,7 @@ Set `UPDATE_INTERVAL` in milliseconds:
    - Only post when stats have changed
 
 3. **Available Commands:**
+   - `!add <tracker.gg URL>` - Add a player by their tracker.gg profile URL (easiest method!)
    - `!search <playername>` - Search for players by name and get their IDs
    - `!track <ID>` - Add a player to tracking using their player ID
    - `!list` - List all currently tracked players
@@ -101,6 +102,7 @@ Set `UPDATE_INTERVAL` in milliseconds:
 
 **Example Usage:**
 ```
+!add https://tracker.gg/bf6/profile/2481313248/overview
 !search PlayerName123
 !track 1234567890
 !list

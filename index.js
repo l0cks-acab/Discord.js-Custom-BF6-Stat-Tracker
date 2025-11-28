@@ -90,6 +90,41 @@ async function fetchPlayerStats(playerName, platform, personaId = null) {
 }
 
 /**
+ * Parses a tracker.gg URL to extract player ID
+ * @param {string} url - Tracker.gg profile URL
+ * @returns {string|null} Player ID or null if invalid
+ */
+function parseTrackerUrl(url) {
+    try {
+        // Handle different tracker.gg URL formats:
+        // https://tracker.gg/bf6/profile/{playerId}/overview
+        // https://tracker.gg/bf6/profile/pc/{playerName}
+        // https://tracker.gg/bf6/profile/xbox/{playerName}
+        // https://tracker.gg/bf6/profile/psn/{playerName}
+        
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/').filter(p => p);
+        
+        // Format: /bf6/profile/{id}/overview or /bf6/profile/{platform}/{name}
+        if (pathParts.length >= 3 && pathParts[0] === 'bf6' && pathParts[1] === 'profile') {
+            const thirdPart = pathParts[2];
+            
+            // If third part is a number, it's a player ID
+            if (/^\d+$/.test(thirdPart)) {
+                return thirdPart;
+            }
+            
+            // Otherwise, it might be platform/name format - we'll need to search
+            // But for now, return null and let the search function handle it
+        }
+        
+        return null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
  * Searches for players by name across all platforms
  * @param {string} playerName - Player's username to search for
  * @returns {Promise<Array>} Array of found players with their IDs
@@ -351,6 +386,82 @@ client.on('messageCreate', async (message) => {
         return;
     }
     
+    // Add command: !add tracker.gg URL
+    if (content.startsWith('!add ')) {
+        const url = content.slice(5).trim();
+        if (!url) {
+            return message.reply('❌ Please provide a tracker.gg URL.\nUsage: `!add https://tracker.gg/bf6/profile/2481313248/overview`');
+        }
+        
+        // Parse the tracker.gg URL to extract player ID
+        const playerId = parseTrackerUrl(url);
+        
+        if (!playerId) {
+            return message.reply('❌ Invalid tracker.gg URL format.\nExpected format: `https://tracker.gg/bf6/profile/{playerID}/overview`\nExample: `!add https://tracker.gg/bf6/profile/2481313248/overview`');
+        }
+        
+        await message.reply(`🔍 Looking up player with ID ${playerId}...`);
+        
+        // Search for the player with this ID across all platforms
+        let foundPlayer = null;
+        const platforms = ['pc', 'xbox', 'psn'];
+        
+        for (const platform of platforms) {
+            try {
+                const apiUrl = `${CONFIG.API_BASE_URL}?personaId=${encodeURIComponent(playerId)}&platform=${platform}`;
+                const response = await fetch(apiUrl);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && (data.userName || data.name || data.personaId)) {
+                        foundPlayer = {
+                            name: data.userName || data.name || 'Unknown',
+                            personaId: data.personaId || data.id || playerId,
+                            platform: platform
+                        };
+                        break;
+                    }
+                }
+                // Small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (error) {
+                continue;
+            }
+        }
+        
+        if (!foundPlayer) {
+            return message.reply(`❌ Could not find player with ID "${playerId}" on any platform.\nMake sure the tracker.gg URL is correct and the player exists.`);
+        }
+        
+        // Check if already tracked
+        const alreadyTracked = trackedPlayers.find(p => 
+            (p.personaId && p.personaId === foundPlayer.personaId) ||
+            (p.name === foundPlayer.name && p.platform === foundPlayer.platform)
+        );
+        
+        if (alreadyTracked) {
+            return message.reply(`❌ **${foundPlayer.name}** (${foundPlayer.platform.toUpperCase()}) is already being tracked!`);
+        }
+        
+        // Add to tracked players
+        trackedPlayers.push(foundPlayer);
+        saveTrackedPlayers();
+        
+        const embed = new EmbedBuilder()
+            .setTitle('✅ Player Added to Tracking')
+            .setDescription(`**${foundPlayer.name}** (${foundPlayer.platform.toUpperCase()})`)
+            .addFields(
+                { name: 'Player ID', value: foundPlayer.personaId || 'N/A', inline: true },
+                { name: 'Platform', value: foundPlayer.platform.toUpperCase(), inline: true },
+                { name: 'Total Tracked', value: trackedPlayers.length.toString(), inline: true }
+            )
+            .setColor(0x00FF00)
+            .setTimestamp();
+        
+        await message.reply({ embeds: [embed] });
+        return;
+    }
+    
     // Track command: !track ID
     if (content.startsWith('!track ')) {
         const playerId = content.slice(7).trim();
@@ -483,8 +594,9 @@ client.on('messageCreate', async (message) => {
             .setTitle('🎮 BF6 Tracker Bot Commands')
             .setDescription('Commands for the Battlefield 6 tracker bot')
             .addFields(
+                { name: '!add <tracker.gg URL>', value: 'Add a player by their tracker.gg profile URL\nExample: `!add https://tracker.gg/bf6/profile/2481313248/overview`', inline: false },
                 { name: '!search <playername>', value: 'Search for players by name and get their IDs', inline: false },
-                { name: '!track <ID>', value: 'Add a player to tracking using their ID', inline: false },
+                { name: '!track <ID>', value: 'Add a player to tracking using their player ID', inline: false },
                 { name: '!list', value: 'List all currently tracked players', inline: false },
                 { name: '!untrack <ID>', value: 'Remove a player from tracking', inline: false },
                 { name: '!update', value: 'Manually trigger stats update', inline: false },
